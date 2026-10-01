@@ -1,0 +1,27 @@
+import { useMemo, useState } from 'react';
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, Clock3, Sparkles } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { interviewService } from '../services/interviewService';
+import { Alert, SpinnerButton } from '../components/common/UI';
+import { getErrorMessage } from '../services/api';
+
+const roles = ['Software Developer', 'Frontend Developer', 'Backend Developer', 'Full Stack Developer', 'Data Analyst', 'Data Scientist', 'AI/ML Engineer', 'QA Engineer', 'DevOps Engineer', 'Cybersecurity Analyst'];
+const levels = ['Fresher', 'Junior', 'Mid-Level', 'Senior'];
+const types = ['Technical', 'HR', 'Behavioral', 'Coding', 'General', 'Mixed'];
+const difficulties = ['Easy', 'Medium', 'Hard'];
+
+export default function CreateInterview() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ job_role: 'Software Developer', experience_level: 'Fresher', interview_type: 'Mixed', difficulty: 'Medium', total_questions: 5 });
+  const [custom, setCustom] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const duration = useMemo(() => Math.ceil(Number(form.total_questions) * 2.5), [form.total_questions]);
+  const change = (event) => setForm({ ...form, [event.target.name]: event.target.value });
+  const submit = async (event) => {
+    event.preventDefault(); setError(''); setLoading(true);
+    try { const interview = await interviewService.create({ ...form, total_questions: Number(form.total_questions) }); navigate(`/interview/${interview.id}`); }
+    catch (err) { setError(getErrorMessage(err)); } finally { setLoading(false); }
+  };
+  return <div className="narrow-page"><Link to="/dashboard" className="back-link"><ArrowLeft size={15} /> Back to overview</Link><div className="page-heading"><div><div className="section-kicker">SET YOURSELF UP</div><h1>Build your interview</h1><p>Choose the kind of practice that feels right for you.</p></div></div><div className="create-layout"><form className="card create-form" onSubmit={submit}><Alert>{error}</Alert><div className="form-section-title"><span>01</span><div><strong>Role & experience</strong><small>We'll shape questions around your goals.</small></div></div><div className="form-grid"><label className="form-label full">Job role{custom ? <input className="form-control" name="job_role" value={form.job_role} onChange={change} placeholder="e.g. Product Designer" minLength="2" maxLength="120" required /> : <select className="form-control" name="job_role" value={form.job_role} onChange={(e) => e.target.value === 'Custom role' ? (setCustom(true), setForm({ ...form, job_role: '' })) : change(e)}>{roles.map((role) => <option key={role}>{role}</option>)}<option>Custom role</option></select>}{custom && <button type="button" className="small-link custom-toggle" onClick={() => { setCustom(false); setForm({ ...form, job_role: roles[0] }); }}>Choose a suggested role</button>}</label><label className="form-label full">Experience level<select className="form-control" name="experience_level" value={form.experience_level} onChange={change}>{levels.map((level) => <option key={level}>{level}</option>)}</select></label></div><div className="form-divider" /><div className="form-section-title"><span>02</span><div><strong>Interview style</strong><small>Make it a focused session or mix it up.</small></div></div><div className="choice-grid">{types.map((type) => <button type="button" key={type} className={`choice-card ${form.interview_type === type ? 'selected' : ''}`} onClick={() => setForm({ ...form, interview_type: type })}><span className="choice-radio" />{type}</button>)}</div><label className="form-label difficulty-label">Difficulty<select className="form-control" name="difficulty" value={form.difficulty} onChange={change}>{difficulties.map((level) => <option key={level}>{level}</option>)}</select></label><div className="form-divider" /><div className="form-section-title"><span>03</span><div><strong>Session length</strong><small>Take the time you need.</small></div></div><div className="question-count">{[5, 10, 15, 20].map((count) => <button type="button" key={count} className={`count-option ${Number(form.total_questions) === count ? 'selected' : ''}`} onClick={() => setForm({ ...form, total_questions: count })}><strong>{count}</strong><small>questions</small></button>)}</div><div className="duration-note"><Clock3 size={15} /> Estimated duration <strong>~{duration} min</strong></div><SpinnerButton className="button button-primary create-submit" loading={loading}><Sparkles size={16} /> Generate questions <ArrowRight size={16} /></SpinnerButton><p className="create-caption">Questions are generated instantly in Demo AI mode. No API key needed.</p></form><aside className="create-aside"><div className="create-aside-art"><div className="role-icon"><BriefcaseBusiness size={23} /></div><span className="art-spark">✳</span><div className="art-line art-line-one" /><div className="art-line art-line-two" /></div><div className="aside-copy"><div className="section-kicker">A GENTLE REMINDER</div><h3>This is practice, not a test.</h3><p>There are no perfect answers. Use the feedback as a guide to notice what you're already doing well and what to try next.</p><div className="aside-tip"><Sparkles size={15} /><span>Your answers and coaching are private to your account.</span></div></div></aside></div></div>;
+}

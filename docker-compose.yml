@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - interview-data:/app/data
+    environment:
+      DATABASE_URL: sqlite:////app/data/interview_analyzer.db
+      AI_MODE: mock
+      SECRET_KEY: ${SECRET_KEY:-local-docker-development-key-change-before-deployment}
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8000
+    depends_on:
+      - backend
+volumes:
+  interview-data:
